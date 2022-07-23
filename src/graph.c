@@ -25,90 +25,123 @@
  ln -13
 */
 
+int priorites(int token) {
+    switch (token) {
+        case 
+    }
+}
+
 //#define is_start_of_function(c) (c == 's' || c == 'c' || c == 't' || c == 'l')
 #define is_operator(c) (c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')')
 #define is_start_of_number(c) (c >= '0' && c <= '9')
 
-int *read_tokens(char *input) {
-    int len = (int) strlen(input);
-    int flag = 0, amount_tokens = 0;
+int *read_tokens(char *input, int *amount_tokens) {
+    int len = (int) strlen(input), flag = 0;
     int *tokens = NULL;
-    char *token;
-
+    
+    *amount_tokens = 0;
+    
     for (int i = 0; i < len; ) {
-            if ((len - i > 5) && strncmp(input + i, "sqrt", 4) == 0) {
-                tokens = realloc(tokens, (amount_tokens + 1) * sizeof(int));
-                tokens[amount_tokens] = -12;
-                amount_tokens++;
-                i += 4;
-            }
-
-            if (len - i > 4) {
-                if (strncmp(input + i, "sin", 3) == 0) {
-                    tokens = realloc(tokens, (amount_tokens + 1) * sizeof(int));
-                    tokens[amount_tokens] = -8;
-                    amount_tokens++;
-                }else if (strncmp(input + i, "cos", 3) == 0) {
-                    tokens = realloc(tokens, (amount_tokens + 1) * sizeof(int));
-                    tokens[amount_tokens] = -9;
-                    amount_tokens++;
-                }else if (strncmp(input + i, "tan", 3) == 0) {
-                    tokens = realloc(tokens, (amount_tokens + 1) * sizeof(int));
-                    tokens[amount_tokens] = -10;
-                    amount_tokens++;
-                }else if (strncmp(input + i, "ctg", 3) == 0) {
-                    tokens = realloc(tokens, (amount_tokens + 1) * sizeof(int));
-                    tokens[amount_tokens] = -11;
-                    amount_tokens++;
-                }
-
-                i += 3;
-            }
-
-            if ((len - i > 3) && (strncmp(input + i, "ln", 2) == 0)) {
-                tokens = realloc(tokens, (amount_tokens + 1) * sizeof(int));
-                tokens[amount_tokens] = -13;
-                amount_tokens++;
-                i += 2;
-            }
-
             if (len - i > 2 && is_operator(input[i])) {
-                tokens = realloc(tokens, (amount_tokens + 1) * sizeof(int));
+                tokens = realloc(tokens, (*amount_tokens + 1) * sizeof(int));
 
                 switch (input[i]) {
                     case '+':
-                        tokens[amount_tokens] = -1;
+                        tokens[*amount_tokens] = -1;
                         break;
                     case '-':
-                        if (tokens[amount_tokens - 1] > -1)
-                            tokens[amount_tokens] = -3;
+                        if (tokens[*amount_tokens - 1] > -1)
+                            tokens[*amount_tokens] = -3;
                         else
-                            tokens[amount_tokens] = -2;
+                            tokens[*amount_tokens] = -2;
                         break;
                     case '*':
-                        tokens[amount_tokens] = -4;
+                        tokens[*amount_tokens] = -4;
                         break;
                     case '/':
-                        tokens[amount_tokens] = -5;
+                        tokens[*amount_tokens] = -5;
                         break;
                     case '(':
-                        tokens[amount_tokens] = -6;
+                        tokens[*amount_tokens] = -6;
                         break;
                     case ')':
-                        tokens[amount_tokens] = -7;
+                        tokens[*amount_tokens] = -7;
                         break;
                 }
 
-                amount_tokens++;
+                (*amount_tokens)++;
                 i += 1;
-            }
+            } else if (47 < input[i] && input[i] < 58) {
+                int digit = 0;
+                
+                while(47 < input[i] && input[i] < 58 && i < len) {
+                    digit *= 10;
+                    digit += input[i] - 48;
+                    i++;
+                }
 
-            if (47 < input[i] && input[i] < 58)
+                tokens = realloc(tokens, (*amount_tokens + 1) * sizeof(int));
+                tokens[*amount_tokens] = digit;
+                (*amount_tokens)++;
+            } else if ((len - i > 5) && strncmp(input + i, "sqrt", 4) == 0) {
+                tokens = realloc(tokens, (*amount_tokens + 1) * sizeof(int));
+                tokens[*amount_tokens] = -12;
+                (*amount_tokens)++;
+                i += 4;
+            } else if ((len - i > 3) && (strncmp(input + i, "ln", 2) == 0)) {
+                tokens = realloc(tokens, (*amount_tokens + 1) * sizeof(int));
+                tokens[*amount_tokens] = -13;
+                (*amount_tokens)++;
+                i += 2;
+            } else if ((strncmp(input + i, "sin", 3) == 0) && (len - i > 4)) {
+                tokens = realloc(tokens, (*amount_tokens + 1) * sizeof(int));
+                tokens[*amount_tokens] = -8;
+                (*amount_tokens)++;
+                i += 3;
+            } else if ((strncmp(input + i, "cos", 3) == 0) && (len - i > 4)) {
+                tokens = realloc(tokens, (*amount_tokens + 1) * sizeof(int));
+                tokens[*amount_tokens] = -9;
+                (*amount_tokens)++;
+                i += 3;
+            } else if ((strncmp(input + i, "tan", 3) == 0) && (len - i > 4)) {
+                tokens = realloc(tokens, (*amount_tokens + 1) * sizeof(int));
+                tokens[*amount_tokens] = -10;
+                (*amount_tokens)++;
+                i += 3;
+            } else if ((strncmp(input + i, "ctg", 3) == 0) && (len - i > 4)) {
+                tokens = realloc(tokens, (*amount_tokens + 1) * sizeof(int));
+                tokens[*amount_tokens] = -11;
+                (*amount_tokens)++;
+                i += 3;
+            } else if (input[i] == ' ' || input[i] == '\t'){
+                i++;
+            } else {
+                flag = 1;
+            }
     }
+
+    if (flag) {
+        free(tokens);
+        tokens = NULL;
+    }
+    
+    return tokens;
 }
 
 int shunting_yard(char *input, struct stack *result) {
+    int amount_tokens = 0, i = 0, amount_output = 0;
+    int *tokens = read_tokens(input, &amount_tokens);
+    int *output = NULL;
 
+    while (i < amount_tokens) {
+        if (tokens[i] > -1) {
+            output = realloc(output, (amount_output + 1) * sizeof(int));
+            output[amount_output] = tokens[i];
+            amount_output++;
+        } else if (-14 < tokens[i] && tokens[i] < -7) {
+            push(result, tokens[i]);
+        }
+    }
 }
 
 
