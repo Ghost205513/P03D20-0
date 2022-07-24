@@ -44,6 +44,7 @@ char *readline_() {
     char *res = NULL, *tmp;
     int len = 0;
     int n = 0;
+    flag = 1;
 
     do {
         n = scanf("%80[^\n]", buf);
@@ -54,7 +55,12 @@ char *readline_() {
         } else if (n > 0) {
             int chunk_len = (int) strlen(buf);
             int str_len = len + chunk_len;
-            tokens = realloc(res, str_len + 1);
+            tmp = realloc(res, str_len + 1);
+            if (tmp == NULL) {
+                flag = 1;
+            } else {
+                res = tmp;
+            }
             memcpy(res + len, buf, chunk_len);
             len = str_len;
         } else {
@@ -129,7 +135,13 @@ int *read_tokens(char *input, int *amount_tokens) {
 
     for (int i = 0; i < len; ) {
          if (len - i >= 1 && is_operator_c(input[i])) {
-            tokens = realloc(tokens, (*amount_tokens + 1) * sizeof(int));
+            tmp = realloc(tokens, (*amount_tokens + 1) * sizeof(int));
+            if (tmp == NULL) {
+                tokens = tmp;
+            } else {
+                flag = 1;
+                break;
+            }
 
             switch (input[i]) {
                 case '+':
