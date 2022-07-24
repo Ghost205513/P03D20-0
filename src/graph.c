@@ -1,7 +1,11 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <math.h>
 #include "stack.h"
+
+#define WIGHT 80
+#define HEIGHT 25
 
 // Операторы
 // Приоритет Оператор Ассоциативность
@@ -23,17 +27,16 @@
  ctg -11
  sqrt -12
  ln -13
+ x -14
 */
 
 int priorites(int token) {
     switch (token) {
-        case 
+        case
     }
 }
 
-//#define is_start_of_function(c) (c == 's' || c == 'c' || c == 't' || c == 'l')
 #define is_operator(c) (c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')')
-#define is_start_of_number(c) (c >= '0' && c <= '9')
 
 int *read_tokens(char *input, int *amount_tokens) {
     int len = (int) strlen(input), flag = 0;
@@ -71,12 +74,12 @@ int *read_tokens(char *input, int *amount_tokens) {
 
                 (*amount_tokens)++;
                 i += 1;
-            } else if (47 < input[i] && input[i] < 58) {
+            } else if ('0' <= input[i] && input[i] <= '9') {
                 int digit = 0;
                 
-                while(47 < input[i] && input[i] < 58 && i < len) {
+                while('0' <= input[i] && input[i] <= '9' && i < len) {
                     digit *= 10;
-                    digit += input[i] - 48;
+                    digit += input[i] - '0';
                     i++;
                 }
 
@@ -113,6 +116,11 @@ int *read_tokens(char *input, int *amount_tokens) {
                 tokens[*amount_tokens] = -11;
                 (*amount_tokens)++;
                 i += 3;
+            } else if (input[i] == 'x') {
+                tokens = realloc(tokens, (*amount_tokens + 1) * sizeof(int));
+                tokens[*amount_tokens] = -14;
+                (*amount_tokens)++;
+                i++;
             } else if (input[i] == ' ' || input[i] == '\t'){
                 i++;
             } else {
@@ -121,6 +129,7 @@ int *read_tokens(char *input, int *amount_tokens) {
     }
 
     if (flag) {
+        *amount_tokens = 0;
         free(tokens);
         tokens = NULL;
     }
@@ -129,346 +138,142 @@ int *read_tokens(char *input, int *amount_tokens) {
 }
 
 int shunting_yard(char *input, struct stack *result) {
-    int amount_tokens = 0, i = 0, amount_output = 0;
+    int amount_tokens = 0, i = 0, amount_output = 0, flag = 0;
     int *tokens = read_tokens(input, &amount_tokens);
-    int *output = NULL;
+    struct stack *temp_stack = NULL;
 
-    while (i < amount_tokens) {
-        if (tokens[i] > -1) {
-            output = realloc(output, (amount_output + 1) * sizeof(int));
-            output[amount_output] = tokens[i];
-            amount_output++;
-        } else if (-14 < tokens[i] && tokens[i] < -7) {
-            push(result, tokens[i]);
+    if (!tokens) {
+        flag = 1;
+    } else {
+        while (i < amount_tokens) {
+            if (tokens[i] >= -1) {
+                output = realloc(output, (amount_output + 1) * sizeof(int));
+                output[amount_output] = tokens[i];
+                amount_output++;
+            } else if (-14 < tokens[i] && tokens[i] < -7) {
+                push(result, tokens[i]);
+            }
         }
     }
+
+    return flag;
 }
 
+int **function2matrix(struct stack *result) {
+    struct stack *temp = NULL, *current = result;
+    int **matrix = calloc(HEIGHT, sizeof(int *));
 
+    for (int i = 0; i < HEIGHT; i++)
+        matrix[i] = calloc(WIGHT, sizeof(int));
 
-
-
-
-
-
-
-
-
-
-
-
-int op_preced(const char c)
-{
-    switch(c)
-    {
-        case '!':
-            return 4;
-
-        case '*':
-        case '/':
-        case '%':
-            return 3;
-
-        case '+':
-        case '-':
-            return 2;
-
-        case '=':
-            return 1;
-    }
-    return 0;
-}
-
-bool op_left_assoc(const char c)
-{
-    switch(c)
-    {
-        // лево-ассоциативные операторы
-        case '*':
-        case '/':
-        case '%':
-        case '+':
-        case '-':
-        case '=':
-            return true;
-            // право-ассоциативные операторы
-        case '!':
-            return false;
-    }
-    return false;
-}
-
-unsigned int op_arg_count(const char c)
-{
-    switch(c)
-    {
-        case '*':
-        case '/':
-        case '%':
-        case '+':
-        case '-':
-        case '=':
-            return 2;
-        case '!':
-            return 1;
-
-        default:
-            return c - 'A';
-    }
-    return 0;
-}
-#define is_function(c) (c >= 'A' && c <= 'Z')
-
-
-bool shunting_yard(const char *input, char *output)
-{
-    const char *strpos = input, *strend = input + strlen(input);
-    char c, stack[32], sc, *outpos = output;
-    unsigned int sl = 0;
-    while(strpos < strend)
-    {
-        c = *strpos;
-        if(c != ' ')
-        {
-            // Если токен является числом (идентификатором), то добавить его в очередь вывода.
-            if(is_ident(c))
-            {
-                *outpos = c; ++outpos;
-            }
-                // Если токен - функция, то положить его в стек.
-            else if(is_function(c))
-            {
-                stack[sl] = c;
-                ++sl;
-            }
-                //Если токен - разделитель аргументов функции (запятая):
-            else if(c == ',')
-            {
-                bool pe = false;
-                while(sl > 0)
-                {
-                    sc = stack[sl - 1];
-                    if(sc == '(')
-                    {
-                        pe = true;
+    for (int i = 0; i < WIGHT; i++) {
+        int flag = 0;
+        
+        while (current) {
+            if (current->data) {
+                push(temp, current->data);
+            } else {
+                switch ((int) current->data) {
+                    double x2;
+                    double x1;
+                    double x;
+                    case -1:
+                        x2 = temp->data;
+                        temp = pop(temp);
+                        x1 = temp->data;
+                        push(temp, x1 - x2);
                         break;
-                    }
-                    else
-                    {
-                        // Пока на вершине не левая круглая скобка,
-                        // перекладывать операторы из стека в очередь вывода.
-                        *outpos = sc; ++outpos;
-                        sl--;
-                    }
-                }
-                // Если не была достигнута левая круглая скобка, либо разделитель не в том месте
-                // либо была пропущена скобка
-                if(!pe)
-                {
-                    printf("Error: separator or parentheses mismatched\n");
-                    return false;
-                }
-            }
-                // Если токен оператор op1, то:
-            else if(is_operator(c))
-            {
-                while(sl > 0)
-                {
-                    sc = stack[sl - 1];
-                    // Пока на вершине стека присутствует токен оператор op2,
-                    // а также оператор op1 лево-ассоциативный и его приоритет меньше или такой же чем у оператора op2,
-                    // или оператор op1 право-ассоциативный и его приоритет меньше чем у оператора op2
-                    if(is_operator(sc) &&
-                       ((op_left_assoc(c) && (op_preced(c) <= op_preced(sc))) ||
-                        (!op_left_assoc(c) && (op_preced(c) < op_preced(sc)))))
-                    {
-                        // Переложить оператор op2 из стека в очередь вывода.
-                        *outpos = sc; ++outpos;
-                        sl--;
-                    }
-                    else
-                    {
+                    case -2:
+                        x = temp->data;
+                        temp = pop(temp);
+                        push(temp, -x);
                         break;
-                    }
-                }
-                // положить в стек оператор op1
-                stack[sl] = c;
-                ++sl;
-            }
-                // Если токен - левая круглая скобка, то положить его в стек.
-            else if(c == '(')
-            {
-                stack[sl] = c;
-                ++sl;
-            }
-                // Если токен - правая круглая скобка:
-            else if(c == ')')
-            {
-                bool pe = false;
-                // До появления на вершине стека токена "левая круглая скобка"
-                // перекладывать операторы из стека в очередь вывода.
-                while(sl > 0)
-                {
-                    sc = stack[sl - 1];
-                    if(sc == '(')
-                    {
-                        pe = true;
+                    case -3:
+                        x2 = temp->data;
+                        temp = pop(temp);
+                        x1 = temp->data;
+                        push(temp, x1 + x2);
                         break;
-                    }
-                    else
-                    {
-                        *outpos = sc; ++outpos;
-                        sl--;
-                    }
-                }
-                // Если стек кончится до нахождения токена левая круглая скобка, то была пропущена скобка.
-                if(!pe)
-                {
-                    printf("Error: parentheses mismatched\n");
-                    return false;
-                }
-                // выкидываем токен "левая круглая скобка" из стека (не добавляем в очередь вывода).
-                sl--;
-                // Если на вершине стека токен - функция, положить его в очередь вывода.
-                if(sl > 0)
-                {
-                    sc = stack[sl - 1];
-                    if(is_function(sc))
-                    {
-                        *outpos = sc; ++outpos;
-                        sl--;
-                    }
+                    case -4:
+                        x2 = temp->data;
+                        temp = pop(temp);
+                        x1 = temp->data;
+                        push(temp, x1 * x2);
+                        break;
+                    case -5:
+                        x2 = temp->data;
+                        temp = pop(temp);
+                        x1 = temp->data;
+                        if (x2)
+                            push(temp, x1 / x2);
+                        else
+                            flag = 1;
+                        break;
+                    case -8:
+                        x = temp->data;
+                        temp = pop(temp);
+                        push(temp, sin(x));
+                        break;
+                    case -9:
+                        x = temp->data;
+                        temp = pop(temp);
+                        push(temp, cos(x));
+                        break;
+                    case -10:
+                        x = temp->data;
+                        temp = pop(temp);
+                        if (cos(x))
+                            push(temp, tan(x));
+                        else
+                            flag = 1;
+                        break;
+                    case -11:
+                        x = temp->data;
+                        temp = pop(temp);
+                        if (sin(x))
+                            push(temp, cos(x) / sin(x));
+                        else
+                            flag = 1;
+                        break;
+                    case -12:
+                        x = temp->data;
+                        temp = pop(temp);
+                        if (x)
+                            push(temp, sqrt(x));
+                        else
+                            flag = 1;
+                        break;
+                    case -13:
+                        x = temp->data;
+                        temp = pop(temp);
+                        if (x)
+                            push(temp, log(x));
+                        else
+                            flag = 1;
+                        break;
+                    case -14:
+                        push(temp, i * 4.0 * M_PI / 79.0);
+                        break;
                 }
             }
-            else
-            {
-                printf("Unknown token %c\n", c);
-                return false; // Unknown token
-            }
+            if (flag)
+                break;
+            current = current->next;
         }
-        ++strpos;
-    }
-    // Когда не осталось токенов на входе:
-    // Если в стеке остались токены:
-    while(sl > 0)
-    {
-        sc = stack[sl - 1];
-        if(sc == '(' || sc == ')')
-        {
-            printf("Error: parentheses mismatched\n");
-            return false;
+        
+        if (!flag) {
+            matrix[(int) round(temp->data * 12.0) + 12][i] = 1;
         }
-        *outpos = sc; ++outpos;
-        --sl;
+
+        free_stack(temp);
     }
 
-    *outpos = 0; // Добавляем завершающий ноль к строке
-    return true;
+    return matrix;
 }
 
-bool execution_order(const char *input)
-{
-    printf("order: (arguments in reverse order)\n");
-    const char *strpos = input, *strend = input + strlen(input);
-    char c, res[4];
-    unsigned int sl = 0, sc, stack[32], rn = 0;
-    // Пока на входе остались токены
-    while(strpos < strend)
-    {
-        // Прочитать следующий токен
-        c = *strpos;
-        // Если токен - значение или идентификатор
-        if(is_ident(c))
-        {
-            // Поместить его в стек
-            stack[sl] = c;
-            ++sl;
-        }
-            // В противном случае, токен - оператор (здесь под оператором понимается как оператор, так и название функции)
-        else if(is_operator(c) || is_function(c))
-        {
-            sprintf(res, "_%02d", rn);
-            printf("%s = ", res);
-            ++rn;
-            // Априори известно, что оператор принимает n аргументов
-            unsigned int nargs = op_arg_count(c);
-            unsigned int Tnargs = nargs;
-            // Если в стеке значений меньше, чем n
-            if(sl < nargs)
-            {
-                // (ошибка) Недостаточное количество аргументов в выражении.
-                return false;
-            }
-            // В противном случае, взять последние n аргументов из стека
-            // Вычислить оператор, взяв эти значения в качестве аргументов
-            if(is_function(c))
-            {
-                printf("%c(", c);
-                while(nargs > 0)
-                {
-                    sc = stack[sl - nargs];
-                    if(nargs > 1)
-                    {
-                        printf("%s, ", &sc);
-                    }
-                    else
-                    {
-                        printf("%s)\n", &sc);
-                    }
-                    --nargs;
-                }
-                sl -= Tnargs;
-            }
-            else
-            {
-                if(nargs == 1)
-                {
-                    sc = stack[sl - 1];
-                    sl--;
-                    printf("%c %s;\n", c, &sc);
-                }
-                else
-                {
-                    sc = stack[sl - 2];
-                    printf("%s %c ", &sc, c);
-                    sc = stack[sl - 1];
-                    printf("%s;\n",&sc);
-                    sl -= 2;
+void free_matrix(int **matrix) {
+    for (int i = 0; i < HEIGHT; i++)
+        free(matrix[i]);
 
-                }
-            }
-            // Если получены результирующие значения, поместить таковые в стек.
-            stack[sl] = *(unsigned int*)res;
-            ++sl;
-        }
-        ++strpos;
-    }
-    // Если в стеке осталось лишь одно значение,
-    // оно будет являться результатом вычислений.
-    if(sl == 1)
-    {
-        sc = stack[sl - 1];
-        sl--;
-        printf("%s is a result\n", &sc);
-        return true;
-    }
-    // Если в стеке большее количество значений,
-    // (ошибка) Пользователь ввёл слишком много значений.
-    return false;
-}
-
-int main()
-{
-    // Имена функций: A() B(a) C(a, b), D(a, b, c) ...
-    // идентификаторы: 0 1 2 3 ... and a b c d e ...
-    // операторы: = - + / * % !
-    const char *input = "(2 - 3 * 5) * 2 - 3";
-    char output[128];
-    printf("input: %s\n", input);
-    if(shunting_yard(input, output))
-    {
-        printf("output: %s\n", output);
-        execution_order(output);
-    }
-    return 0;
+    free(matrix);
 }

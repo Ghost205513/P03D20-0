@@ -4,14 +4,14 @@
 #include <stdlib.h>
 
 struct stack {
-    int data;
+    double data;
     struct stack *next;
 };
 
-struct stack *init(int data);
-struct stack *push(struct stack *root, int data);
+struct stack *init(double data);
+struct stack *push(struct stack *root, double data);
 struct stack *pop(struct stack *root);
 void free_stack(struct stack *root);
 
-#endif  // SRC_STACK_H_
+#endif SRC_STACK_H_
 

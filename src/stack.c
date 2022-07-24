@@ -1,16 +1,16 @@
 #include "stack.h"
 #include <stdlib.h>
 
-struct stack *init(int data) {
+struct stack *init(double data) {
     struct stack *elements = malloc(sizeof(struct stack));
-
+    
     elements->data = data;
     elements->next = NULL;
 
     return elements;
 }
 
-struct stack *push(struct stack *root, int data) {
+struct stack *push(struct stack *root, double data) {
     struct stack *new = init(data);
 
     if (root) {
