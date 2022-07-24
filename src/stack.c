@@ -3,7 +3,7 @@
 
 struct stack *init(double data) {
     struct stack *elements = malloc(sizeof(struct stack));
-    
+
     elements->data = data;
     elements->next = NULL;
 

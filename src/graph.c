@@ -1,18 +1,17 @@
 #include <string.h>
 #include <stdio.h>
-#include <stdbool.h>
 #include <math.h>
 #include "stack.h"
+#include "queue.h"
 
 #define WIGHT 80
 #define HEIGHT 25
 
 // Операторы
 // Приоритет Оператор Ассоциативность
-// 4 ! правая
-// 3 * / % левая
-// 2 + - левая
-// 1 = левая
+// 2 * / левая
+// 1 + -(бинарный) левая
+// 3 -(унарный) правая
 
 /*
  + -1
@@ -30,13 +29,45 @@
  x -14
 */
 
-int priorites(int token) {
+int priority(int token) {
+    int ans;
+    
     switch (token) {
-        case
+        case -2:
+            ans = 3;
+            break;
+        case -4:
+        case -5:
+            ans = 2;
+            break;
+        case -1:
+        case -3:
+            ans = 1;
+            break;
     }
+
+    return ans;
 }
 
-#define is_operator(c) (c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')')
+int associativity(int token) {
+    int ans;
+
+    switch (token) {
+        case -1:
+        case -3:
+        case -4:
+        case -5:
+            ans = 0;
+            break;
+        case -2:
+            ans = 1;
+            break;
+    }
+
+    return ans;
+}
+
+#define is_operator(x) (-5 <= x && x <= -1)
 
 int *read_tokens(char *input, int *amount_tokens) {
     int len = (int) strlen(input), flag = 0;
@@ -137,8 +168,8 @@ int *read_tokens(char *input, int *amount_tokens) {
     return tokens;
 }
 
-int shunting_yard(char *input, struct stack *result) {
-    int amount_tokens = 0, i = 0, amount_output = 0, flag = 0;
+int shunting_yard(char *input, struct queue *result) {
+    int amount_tokens = 0, i = 0, flag = 0;
     int *tokens = read_tokens(input, &amount_tokens);
     struct stack *temp_stack = NULL;
 
@@ -147,11 +178,15 @@ int shunting_yard(char *input, struct stack *result) {
     } else {
         while (i < amount_tokens) {
             if (tokens[i] >= -1) {
-                output = realloc(output, (amount_output + 1) * sizeof(int));
-                output[amount_output] = tokens[i];
-                amount_output++;
-            } else if (-14 < tokens[i] && tokens[i] < -7) {
-                push(result, tokens[i]);
+                push_queue(result, tokens[i]);
+            } else if (-14 <= tokens[i] && tokens[i] <= -8) {
+                push(temp_stack, tokens[i]);
+            } else if (is_operator(tokens[i])) {
+                while (is_operator(temp_stack->data) &&
+                (priority(tokens[i]) < priority(temp_stack->data) ||
+                (priority(tokens[i]) == priority(temp_stack->data) && associativity(tokens[i]) == 0))) {
+                    push_queue(result, )
+                }
             }
         }
     }
