@@ -31,7 +31,7 @@
 
 int priority(int token) {
     int ans;
-    
+
     switch (token) {
         case -2:
             ans = 3;
@@ -68,13 +68,14 @@ int associativity(int token) {
 }
 
 #define is_operator(x) (-5 <= x && x <= -1)
+#define is_function(x) (-14 <= x && x <= -8)
 
 int *read_tokens(char *input, int *amount_tokens) {
     int len = (int) strlen(input), flag = 0;
     int *tokens = NULL;
-    
+
     *amount_tokens = 0;
-    
+
     for (int i = 0; i < len; ) {
             if (len - i > 2 && is_operator(input[i])) {
                 tokens = realloc(tokens, (*amount_tokens + 1) * sizeof(int));
@@ -107,8 +108,8 @@ int *read_tokens(char *input, int *amount_tokens) {
                 i += 1;
             } else if ('0' <= input[i] && input[i] <= '9') {
                 int digit = 0;
-                
-                while('0' <= input[i] && input[i] <= '9' && i < len) {
+
+                while ('0' <= input[i] && input[i] <= '9' && i < len) {
                     digit *= 10;
                     digit += input[i] - '0';
                     i++;
@@ -152,7 +153,7 @@ int *read_tokens(char *input, int *amount_tokens) {
                 tokens[*amount_tokens] = -14;
                 (*amount_tokens)++;
                 i++;
-            } else if (input[i] == ' ' || input[i] == '\t'){
+            } else if (input[i] == ' ' || input[i] == '\t') {
                 i++;
             } else {
                 flag = 1;
@@ -164,7 +165,7 @@ int *read_tokens(char *input, int *amount_tokens) {
         free(tokens);
         tokens = NULL;
     }
-    
+
     return tokens;
 }
 
@@ -178,24 +179,68 @@ int shunting_yard(char *input, struct queue *result) {
     } else {
         while (i < amount_tokens) {
             if (tokens[i] >= -1) {
-                push_queue(result, tokens[i]);
+                result = push_queue(result, tokens[i]);
             } else if (-14 <= tokens[i] && tokens[i] <= -8) {
-                push(temp_stack, tokens[i]);
+                temp_stack = push(temp_stack, tokens[i]);
             } else if (is_operator(tokens[i])) {
-                while (is_operator(temp_stack->data) &&
-                (priority(tokens[i]) < priority(temp_stack->data) ||
-                (priority(tokens[i]) == priority(temp_stack->data) && associativity(tokens[i]) == 0))) {
-                    push_queue(result, )
+                while (temp_stack && is_operator(temp_stack->data) &&
+                (priority(tokens[i]) < priority((int) temp_stack->data) ||
+                (priority(tokens[i]) == priority((int) temp_stack->data) && associativity(tokens[i]) == 0))) {
+                    result = push_queue(result, (int) temp_stack->data);
+                    temp_stack = pop(temp_stack);
+                }
+
+                temp_stack = push(temp_stack, (double) tokens[i]);
+            } else if (tokens[i] == -6) {
+                temp_stack = push(temp_stack, tokens[i]);
+            } else if (tokens[i] == -7) {
+                int brace_flag = 1;
+
+                while (temp_stack) {
+                    if (temp_stack->data == -6) {
+                        brace_flag = 0;
+                        break;
+                    } else {
+                        result = push_queue(result, (int) temp_stack->data);
+                        temp_stack = pop(temp_stack);
+                    }
+                }
+
+                if (brace_flag) {
+                    flag = 1;
+                    break;
+                }
+
+                temp_stack = pop(temp_stack);
+
+                if (temp_stack && is_function(temp_stack->data)) {
+                    result = push_queue(result, (int) temp_stack->data);
+                    temp_stack = pop(temp_stack);
                 }
             }
         }
+
+        if (!flag) {
+            while (temp_stack) {
+                if (temp_stack->data == -6 || temp_stack->data == -7) {
+                    flag = 1;
+                    break;
+                }
+                result = push_queue(result, (int) temp_stack->data);
+                temp_stack = pop(temp_stack);
+            }
+        }
+
+        free(tokens);
     }
 
+    free_stack(temp_stack);
     return flag;
 }
 
-int **function2matrix(struct stack *result) {
-    struct stack *temp = NULL, *current = result;
+int **function2matrix(struct queue *result) {
+    struct stack *temp = NULL;
+    struct queue *current = result;
     int **matrix = calloc(HEIGHT, sizeof(int *));
 
     for (int i = 0; i < HEIGHT; i++)
@@ -203,7 +248,7 @@ int **function2matrix(struct stack *result) {
 
     for (int i = 0; i < WIGHT; i++) {
         int flag = 0;
-        
+
         while (current) {
             if (current->data) {
                 push(temp, current->data);
@@ -295,7 +340,7 @@ int **function2matrix(struct stack *result) {
                 break;
             current = current->next;
         }
-        
+
         if (!flag) {
             matrix[(int) round(temp->data * 12.0) + 12][i] = 1;
         }

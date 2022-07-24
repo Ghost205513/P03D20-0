@@ -8,7 +8,6 @@ struct stack {
     struct stack *next;
 };
 
-struct stack *init(double data);
 struct stack *push(struct stack *root, double data);
 struct stack *pop(struct stack *root);
 void free_stack(struct stack *root);

@@ -3,7 +3,7 @@
 
 struct queue *init(int data) {
     struct queue *elements = NULL;
-    
+
     elements = malloc(sizeof(struct queue));
     elements->data = data;
     elements->next = NULL;
